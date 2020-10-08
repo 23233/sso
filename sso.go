@@ -22,14 +22,15 @@ type Sso struct {
 }
 
 func New(appKey string) Sso {
-	var s = new(Sso)
-	s.Host = "https://sso.rycsg.com"
-	s.AppKey = appKey
-	s.r = req.New()
-	s.CdnExpired = "10m"
-	s.CdnPrefixUrl = "https://static.rycsg.com"
+	var s = Sso{
+		Host:         "https://sso.rycsg.com",
+		AppKey:       appKey,
+		r:            req.New(),
+		CdnExpired:   "10m",
+		CdnPrefixUrl: "https://static.rycsg.com",
+	}
 	s.r.SetTimeout(10 * time.Second)
-	return *s
+	return s
 }
 
 func (c *Sso) SetHost(host string) {
