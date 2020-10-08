@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type sso struct {
+type Sso struct {
 	Host         string
 	AppKey       string
 	r            *req.Req
@@ -21,9 +21,9 @@ type sso struct {
 	SecretKey    string
 }
 
-func New(appKey, secret string) *sso {
-	var s = new(sso)
-	s.Host = "https://sso.rycsg.com"
+func New(appKey, secret string) *Sso {
+	var s = new(Sso)
+	s.Host = "https://Sso.rycsg.com"
 	s.AppKey = appKey
 	s.r = req.New()
 	s.CdnSecret = secret
@@ -33,19 +33,19 @@ func New(appKey, secret string) *sso {
 	return s
 }
 
-func (c *sso) setHost(host string) {
+func (c *Sso) setHost(host string) {
 	c.Host = host
 }
-func (c *sso) setCdnUrl(host string) {
+func (c *Sso) setCdnUrl(host string) {
 	c.CdnPrefixUrl = host
 }
-func (c *sso) setSecret(secretId, secretKey string) {
+func (c *Sso) setSecret(secretId, secretKey string) {
 	c.SecretId = secretId
 	c.SecretKey = secretKey
 }
 
 // 校验jwt是否过期
-func (c *sso) CheckJwtExpired(jwt string) (int, error) {
+func (c *Sso) CheckJwtExpired(jwt string) (int, error) {
 	url := c.Host + "/user/check"
 	header := req.Header{
 		"Authorization": fmt.Sprintf("bearer %s", jwt),
@@ -65,7 +65,7 @@ func (c *sso) CheckJwtExpired(jwt string) (int, error) {
 }
 
 // 获取当前用户
-func (c *sso) GetCurrentUser(jwt string) (UserInfo, int, error) {
+func (c *Sso) GetCurrentUser(jwt string) (UserInfo, int, error) {
 	var d UserInfo
 	url := c.Host + "/user/get_user_info"
 	header := req.Header{
@@ -94,7 +94,7 @@ func (c *sso) GetCurrentUser(jwt string) (UserInfo, int, error) {
 }
 
 // 批量获取用户信息
-func (c *sso) BulkGetUserInfo(body BulkGetUserInfoReq) ([]UserInfo, int, error) {
+func (c *Sso) BulkGetUserInfo(body BulkGetUserInfoReq) ([]UserInfo, int, error) {
 	d := make([]UserInfo, 0)
 
 	url := c.Host + "/bulk_user_info"
@@ -120,7 +120,7 @@ func (c *sso) BulkGetUserInfo(body BulkGetUserInfoReq) ([]UserInfo, int, error) 
 }
 
 // 发起支付
-func (c *sso) RunPay(jwt string, data ProductPay) (ProductResp, error) {
+func (c *Sso) RunPay(jwt string, data ProductPay) (ProductResp, error) {
 	var d ProductResp
 	url := c.Host + "/user/product_pay"
 	header := req.Header{
@@ -145,7 +145,7 @@ func (c *sso) RunPay(jwt string, data ProductPay) (ProductResp, error) {
 }
 
 // 发起支付退费
-func (c *sso) PayUndo(jwt string, data ProductUndoReq) (int, error) {
+func (c *Sso) PayUndo(jwt string, data ProductUndoReq) (int, error) {
 	url := c.Host + "/user/pay_undo"
 	header := req.Header{
 		"Authorization": fmt.Sprintf("bearer %s", jwt),
@@ -165,7 +165,7 @@ func (c *sso) PayUndo(jwt string, data ProductUndoReq) (int, error) {
 }
 
 // 发起用户交易
-func (c *sso) PayReward(jwt string, data ProductRewardReq) (int, error) {
+func (c *Sso) PayReward(jwt string, data ProductRewardReq) (int, error) {
 	url := c.Host + "/user/reward"
 	header := req.Header{
 		"Authorization": fmt.Sprintf("bearer %s", jwt),
@@ -185,7 +185,7 @@ func (c *sso) PayReward(jwt string, data ProductRewardReq) (int, error) {
 }
 
 // 发起app后端退费
-func (c *sso) PayUndoUserUid(data ProductUndoUserReq) (int, error) {
+func (c *Sso) PayUndoUserUid(data ProductUndoUserReq) (int, error) {
 	url := c.Host + "/pay_undo"
 	param := req.Param{
 		"app_key": c.AppKey,
@@ -202,7 +202,7 @@ func (c *sso) PayUndoUserUid(data ProductUndoUserReq) (int, error) {
 }
 
 // 通过ticket获取用户
-func (c *sso) TicketGetUser(data ValidTicketReq) (ValidTicketResp, error) {
+func (c *Sso) TicketGetUser(data ValidTicketReq) (ValidTicketResp, error) {
 	var d ValidTicketResp
 	url := c.Host + "/valid_ticket"
 	param := req.Param{
@@ -227,7 +227,7 @@ func (c *sso) TicketGetUser(data ValidTicketReq) (ValidTicketResp, error) {
 }
 
 // 获取所有头像
-func (c *sso) GetAllAvatar() ([]UserAvatar, error) {
+func (c *Sso) GetAllAvatar() ([]UserAvatar, error) {
 	var d []UserAvatar
 	url := c.Host + "/get_avatar"
 	param := req.Param{
@@ -252,7 +252,7 @@ func (c *sso) GetAllAvatar() ([]UserAvatar, error) {
 }
 
 // 生成资源url访问地址
-func (c *sso) GenCosFileUrl(fileName string) string {
+func (c *Sso) GenCosFileUrl(fileName string) string {
 	// 使用typea 办法 详情看 https://cloud.tencent.com/document/product/228/33115#typea
 	CdnExpired, _ := time.ParseDuration(c.CdnExpired) // 10分钟链接过期
 	nowTime := time.Now().Add(CdnExpired)
@@ -266,7 +266,7 @@ func (c *sso) GenCosFileUrl(fileName string) string {
 }
 
 // 获取字符串md5
-func (c *sso) GetMD5Encode(data string) string {
+func (c *Sso) GetMD5Encode(data string) string {
 	h := md5.New()
 	h.Write([]byte(data))
 	return hex.EncodeToString(h.Sum(nil))
