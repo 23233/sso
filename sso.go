@@ -21,25 +21,25 @@ type Sso struct {
 	SecretKey    string
 }
 
-func New(appKey, secret string) *Sso {
+func New(appKey, secret string) Sso {
 	var s = new(Sso)
-	s.Host = "https://Sso.rycsg.com"
+	s.Host = "https://sso.rycsg.com"
 	s.AppKey = appKey
 	s.r = req.New()
 	s.CdnSecret = secret
 	s.CdnExpired = "10m"
 	s.CdnPrefixUrl = "https://static.rycsg.com"
 	s.r.SetTimeout(10 * time.Second)
-	return s
+	return *s
 }
 
-func (c *Sso) setHost(host string) {
+func (c *Sso) SetHost(host string) {
 	c.Host = host
 }
-func (c *Sso) setCdnUrl(host string) {
+func (c *Sso) SetCdnUrl(host string) {
 	c.CdnPrefixUrl = host
 }
-func (c *Sso) setSecret(secretId, secretKey string) {
+func (c *Sso) SetSecret(secretId, secretKey string) {
 	c.SecretId = secretId
 	c.SecretKey = secretKey
 }
