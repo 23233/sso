@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+var (
+	Sdk Sso
+)
+
 type Sso struct {
 	Host         string
 	AppKey       string
@@ -22,15 +26,15 @@ type Sso struct {
 }
 
 func New(appKey string) Sso {
-	var s = Sso{
+	Sdk = Sso{
 		Host:         "https://sso.rycsg.com",
 		AppKey:       appKey,
 		r:            req.New(),
 		CdnExpired:   "10m",
 		CdnPrefixUrl: "https://static.rycsg.com",
 	}
-	s.r.SetTimeout(10 * time.Second)
-	return s
+	Sdk.r.SetTimeout(10 * time.Second)
+	return Sdk
 }
 
 func (c *Sso) SetHost(host string) {
