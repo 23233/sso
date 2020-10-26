@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/imroc/req"
-	"github.com/kataras/iris/v12"
 	"github.com/pkg/errors"
+	"net/http"
 	"time"
 )
 
@@ -62,8 +62,8 @@ func (c *Sso) CheckJwtExpired(jwt string) (int, error) {
 		return 0, errors.Wrap(err, "发送验证jwt是否过期的请求错误")
 	}
 	code := resp.Response().StatusCode
-	if code != iris.StatusOK {
-		if code == iris.StatusUnauthorized {
+	if code != http.StatusOK {
+		if code == http.StatusUnauthorized {
 			return code, errors.New("用户登录信息已过期,请重新登录")
 		}
 		return code, errors.New(fmt.Sprintf("向sso验证用户jwt发生意外错误 %d %s", code, resp.String()))
@@ -86,8 +86,8 @@ func (c *Sso) GetCurrentUser(jwt string) (UserInfo, int, error) {
 		return d, 0, errors.Wrap(err, "发送验证jwt是否过期的请求错误")
 	}
 	code := resp.Response().StatusCode
-	if code != iris.StatusOK {
-		if code == iris.StatusUnauthorized {
+	if code != http.StatusOK {
+		if code == http.StatusUnauthorized {
 			return d, code, errors.New("用户登录信息已过期,请重新登录")
 		}
 		return d, code, errors.New(fmt.Sprintf("向sso获取当前用户失败 %d %s", code, resp.String()))
@@ -113,8 +113,8 @@ func (c *Sso) BulkGetUserInfo(body BulkGetUserInfoReq) ([]UserInfo, int, error) 
 		return d, 0, errors.Wrap(err, "批量获取用户失败请求发送失败")
 	}
 	code := resp.Response().StatusCode
-	if code != iris.StatusOK {
-		if code == iris.StatusUnauthorized {
+	if code != http.StatusOK {
+		if code == http.StatusUnauthorized {
 			return d, code, errors.New("用户登录信息已过期,请重新登录")
 		}
 		return d, code, errors.New(fmt.Sprintf("批量获取用户失败 %d %s", code, resp.String()))
@@ -141,7 +141,7 @@ func (c *Sso) RunPay(jwt string, data ProductPay) (ProductResp, error) {
 		return d, errors.Wrap(err, "发起sso支付出错")
 	}
 	code := resp.Response().StatusCode
-	if code != iris.StatusOK {
+	if code != http.StatusOK {
 		return d, errors.New(fmt.Sprintf("发起sso支付出错 %d %s", code, resp.String()))
 	}
 	err = resp.ToJSON(&d)
@@ -165,7 +165,7 @@ func (c *Sso) PayUndo(jwt string, data ProductUndoReq) (int, error) {
 		return 0, errors.Wrap(err, "支付退费请求出错")
 	}
 	code := resp.Response().StatusCode
-	if code != iris.StatusOK {
+	if code != http.StatusOK {
 		return code, errors.New(fmt.Sprintf("支付退费请求出错 %d %s", code, resp.String()))
 	}
 	return code, nil
@@ -185,7 +185,7 @@ func (c *Sso) PayReward(jwt string, data ProductRewardReq) (int, error) {
 		return 0, errors.Wrap(err, "支付请求出错")
 	}
 	code := resp.Response().StatusCode
-	if code != iris.StatusOK {
+	if code != http.StatusOK {
 		return code, errors.New(fmt.Sprintf("支付请求出错 %d %s", code, resp.String()))
 	}
 	return code, nil
@@ -202,7 +202,7 @@ func (c *Sso) PayUndoUserUid(data ProductUndoUserReq) (int, error) {
 		return 0, errors.Wrap(err, "[u]支付退费请求出错")
 	}
 	code := resp.Response().StatusCode
-	if code != iris.StatusOK {
+	if code != http.StatusOK {
 		return code, errors.New(fmt.Sprintf("[u]支付退费请求出错 %d %s", code, resp.String()))
 	}
 	return code, nil
@@ -220,7 +220,7 @@ func (c *Sso) TicketGetUser(data ValidTicketReq) (ValidTicketResp, error) {
 		return d, errors.Wrap(err, "发送ticket验证请求出错")
 	}
 	code := resp.Response().StatusCode
-	if code != iris.StatusOK {
+	if code != http.StatusOK {
 		return d, errors.New(fmt.Sprintf("发送ticket验证错误 %d %s", code, resp.String()))
 	}
 	err = resp.ToJSON(&d)
@@ -245,7 +245,7 @@ func (c *Sso) GetAllAvatar() ([]UserAvatar, error) {
 		return d, errors.Wrap(err, "获取所有头像失败")
 	}
 	code := resp.Response().StatusCode
-	if code != iris.StatusOK {
+	if code != http.StatusOK {
 		return d, errors.New(fmt.Sprintf("获取所有头像失败 %d %s", code, resp.String()))
 	}
 	err = resp.ToJSON(&d)
