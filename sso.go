@@ -68,6 +68,11 @@ func (c *Sso) checkSign(sign, randomStr, timeUnix string) bool {
 	return sign == nowSign
 }
 
+// getVerifyUrl 生成核验的url 前端使用iframe post message 获取ticket
+func (c *Sso) getVerifyUrl() string {
+	return c.Host + c.Prefix + "/verify" + "?public_key=" + c.PublicKey
+}
+
 // RunTr 发起交易 receipt 是否是商品收款
 func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, int) {
 	var d ProductPayResp
