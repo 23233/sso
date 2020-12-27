@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/imroc/req"
 	"github.com/pkg/errors"
+	"math/rand"
 	"net/http"
 	"time"
 )
@@ -15,23 +16,20 @@ var (
 )
 
 type Sso struct {
-	Host         string
-	AppKey       string
-	r            *req.Req
-	CdnSecret    string
-	CdnExpired   string
-	CdnPrefixUrl string
-	SecretId     string
-	SecretKey    string
+	Host      string
+	PublicKey string
+	SecretKey string
+	r         *req.Req
+	Prefix    string
 }
 
-func New(appKey string) Sso {
+func New(publicKey, secretKey string) Sso {
 	Sdk = Sso{
-		Host:         "https://sso.rycsg.com",
-		AppKey:       appKey,
-		r:            req.New(),
-		CdnExpired:   "10m",
-		CdnPrefixUrl: "https://static.rycsg.com",
+		Host:      "https://sso.rycsg.com",
+		PublicKey: publicKey,
+		SecretKey: secretKey,
+		r:         req.New(),
+		Prefix:    "/o",
 	}
 	Sdk.r.SetTimeout(10 * time.Second)
 	return Sdk
@@ -40,182 +38,73 @@ func New(appKey string) Sso {
 func (c *Sso) SetHost(host string) {
 	c.Host = host
 }
-func (c *Sso) SetCdnUrl(host string) {
-	c.CdnPrefixUrl = host
-}
-func (c *Sso) SetCdnSecret(secret string) {
-	c.CdnSecret = secret
-}
-func (c *Sso) SetSecret(secretId, secretKey string) {
-	c.SecretId = secretId
-	c.SecretKey = secretKey
+
+// 生成基本的public_key url参数
+func (c *Sso) getParam() req.Param {
+	return req.Param{
+		"public_key": c.PublicKey,
+	}
 }
 
-// 校验jwt是否过期
-func (c *Sso) CheckJwtExpired(jwt string) (int, error) {
-	url := c.Host + "/user/check"
-	header := req.Header{
-		"Authorization": fmt.Sprintf("bearer %s", jwt),
+// 生成随机字符串
+func (c *Sso) randomStr(n int) string {
+	randBytes := make([]byte, n/2)
+	rand.Read(randBytes)
+	return fmt.Sprintf("%x", randBytes)
+}
+
+// 加密方法
+func (c *Sso) runSign(secretKey, randomStr, timeUnix string) string {
+	h := md5.New()
+	h.Write([]byte(randomStr))
+	h.Write([]byte(secretKey))
+	h.Write([]byte(timeUnix))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// 验证加密
+func (c *Sso) checkSign(sign, randomStr, timeUnix string) bool {
+	nowSign := c.runSign(c.SecretKey, randomStr, timeUnix)
+	return sign == nowSign
+}
+
+// RunTr 发起交易 receipt 是否是商品收款
+func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, int) {
+	var d ProductPayResp
+	url := c.Host + c.Prefix
+	var msg string
+	if receipt {
+		url += "/receipt"
+		msg = "商品收款"
+	} else {
+		url += "/payment"
+		msg = "转账"
 	}
-	resp, err := c.r.Get(url, header)
+	resp, err := c.r.Post(url, c.getParam(), req.BodyJSON(data))
 	if err != nil {
-		return 0, errors.Wrap(err, "发送验证jwt是否过期的请求错误")
+		return d, errors.Wrap(err, "发起交易出错"), 0
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		if code == http.StatusUnauthorized {
-			return code, errors.New("用户登录信息已过期,请重新登录")
+		// 余额不足
+		if code == http.StatusUpgradeRequired {
+			return d, errors.New("余额不足"), code
 		}
-		return code, errors.New(fmt.Sprintf("向sso验证用户jwt发生意外错误 %d %s", code, resp.String()))
+		return d, errors.New(fmt.Sprintf("%s响应错误 %d %s", msg, code, resp.String())), code
 	}
-	return code, nil
+	err = resp.ToJSON(&d)
+	if err != nil {
+		return d, errors.Wrap(err, fmt.Sprintf("%s解析返回信息出错", msg)), code
+	}
+	return d, nil, code
 }
 
-// 获取当前用户
-func (c *Sso) GetCurrentUser(jwt string) (UserInfo, int, error) {
+// TicketGetUser 通过ticket获取用户
+func (c *Sso) TicketGetUser(ticket string) (UserInfo, error) {
 	var d UserInfo
-	url := c.Host + "/user/get_user_info"
-	header := req.Header{
-		"Authorization": fmt.Sprintf("bearer %s", jwt),
-	}
-	param := req.Param{
-		"app_key": c.AppKey,
-	}
-	resp, err := c.r.Get(url, header, param)
-	if err != nil {
-		return d, 0, errors.Wrap(err, "发送验证jwt是否过期的请求错误")
-	}
-	code := resp.Response().StatusCode
-	if code != http.StatusOK {
-		if code == http.StatusUnauthorized {
-			return d, code, errors.New("用户登录信息已过期,请重新登录")
-		}
-		return d, code, errors.New(fmt.Sprintf("向sso获取当前用户失败 %d %s", code, resp.String()))
-	}
-	err = resp.ToJSON(&d)
-	if err != nil {
-		return d, code, errors.Wrap(err, "解析用户结构出错")
-	}
-	return d, code, nil
-
-}
-
-// 批量获取用户信息
-func (c *Sso) BulkGetUserInfo(body BulkGetUserInfoReq) ([]UserInfo, int, error) {
-	d := make([]UserInfo, 0)
-
-	url := c.Host + "/bulk_user_info"
-	param := req.Param{
-		"app_key": c.AppKey,
-	}
-	resp, err := c.r.Post(url, param, req.BodyJSON(body))
-	if err != nil {
-		return d, 0, errors.Wrap(err, "批量获取用户失败请求发送失败")
-	}
-	code := resp.Response().StatusCode
-	if code != http.StatusOK {
-		if code == http.StatusUnauthorized {
-			return d, code, errors.New("用户登录信息已过期,请重新登录")
-		}
-		return d, code, errors.New(fmt.Sprintf("批量获取用户失败 %d %s", code, resp.String()))
-	}
-	err = resp.ToJSON(&d)
-	if err != nil {
-		return d, code, errors.Wrap(err, "批量解析用户数据结构出错")
-	}
-	return d, code, nil
-}
-
-// 发起支付
-func (c *Sso) RunPay(jwt string, data ProductPay) (ProductResp, error) {
-	var d ProductResp
-	url := c.Host + "/user/product_pay"
-	header := req.Header{
-		"Authorization": fmt.Sprintf("bearer %s", jwt),
-	}
-	param := req.Param{
-		"app_key": c.AppKey,
-	}
-	resp, err := c.r.Post(url, header, param, req.BodyJSON(data))
-	if err != nil {
-		return d, errors.Wrap(err, "发起sso支付出错")
-	}
-	code := resp.Response().StatusCode
-	if code != http.StatusOK {
-		return d, errors.New(fmt.Sprintf("发起sso支付出错 %d %s", code, resp.String()))
-	}
-	err = resp.ToJSON(&d)
-	if err != nil {
-		return d, errors.Wrap(err, "解析商品支付数据出错")
-	}
-	return d, nil
-}
-
-// 发起支付退费
-func (c *Sso) PayUndo(jwt string, data ProductUndoReq) (int, error) {
-	url := c.Host + "/user/pay_undo"
-	header := req.Header{
-		"Authorization": fmt.Sprintf("bearer %s", jwt),
-	}
-	param := req.Param{
-		"app_key": c.AppKey,
-	}
-	resp, err := c.r.Post(url, header, param, req.BodyJSON(data))
-	if err != nil {
-		return 0, errors.Wrap(err, "支付退费请求出错")
-	}
-	code := resp.Response().StatusCode
-	if code != http.StatusOK {
-		return code, errors.New(fmt.Sprintf("支付退费请求出错 %d %s", code, resp.String()))
-	}
-	return code, nil
-}
-
-// 发起用户交易
-func (c *Sso) PayReward(jwt string, data ProductRewardReq) (int, error) {
-	url := c.Host + "/user/reward"
-	header := req.Header{
-		"Authorization": fmt.Sprintf("bearer %s", jwt),
-	}
-	param := req.Param{
-		"app_key": c.AppKey,
-	}
-	resp, err := c.r.Post(url, header, param, req.BodyJSON(data))
-	if err != nil {
-		return 0, errors.Wrap(err, "支付请求出错")
-	}
-	code := resp.Response().StatusCode
-	if code != http.StatusOK {
-		return code, errors.New(fmt.Sprintf("支付请求出错 %d %s", code, resp.String()))
-	}
-	return code, nil
-}
-
-// 发起app后端退费
-func (c *Sso) PayUndoUserUid(data ProductUndoUserReq) (int, error) {
-	url := c.Host + "/pay_undo"
-	param := req.Param{
-		"app_key": c.AppKey,
-	}
-	resp, err := c.r.Post(url, param, req.BodyJSON(data))
-	if err != nil {
-		return 0, errors.Wrap(err, "[u]支付退费请求出错")
-	}
-	code := resp.Response().StatusCode
-	if code != http.StatusOK {
-		return code, errors.New(fmt.Sprintf("[u]支付退费请求出错 %d %s", code, resp.String()))
-	}
-	return code, nil
-}
-
-// 通过ticket获取用户
-func (c *Sso) TicketGetUser(data ValidTicketReq) (ValidTicketResp, error) {
-	var d ValidTicketResp
-	url := c.Host + "/valid_ticket"
-	param := req.Param{
-		"app_key": c.AppKey,
-	}
-	resp, err := c.r.Post(url, param, req.BodyJSON(data))
+	url := c.Host + c.Prefix + "/ticket_get_user"
+	body := req.BodyJSON(map[string]interface{}{"ticket": ticket})
+	resp, err := c.r.Post(url, c.getParam(), body)
 	if err != nil {
 		return d, errors.Wrap(err, "发送ticket验证请求出错")
 	}
@@ -225,56 +114,27 @@ func (c *Sso) TicketGetUser(data ValidTicketReq) (ValidTicketResp, error) {
 	}
 	err = resp.ToJSON(&d)
 	if err != nil {
-		return d, errors.Wrap(err, "解析valid出错")
-	}
-	if len(d.Token) < 1 {
-		return d, errors.New("获取token失败")
+		return d, errors.Wrap(err, "解析用户信息出错")
 	}
 	return d, nil
 }
 
-// 获取所有头像
-func (c *Sso) GetAllAvatar() ([]UserAvatar, error) {
-	var d []UserAvatar
-	url := c.Host + "/get_avatar"
-	param := req.Param{
-		"app_key": c.AppKey,
-	}
-	resp, err := c.r.Get(url, param)
+// UidGetUserInfo 通过uid获取用户信息
+func (c *Sso) UidGetUserInfo(uid string) (UserInfo, error) {
+	var d UserInfo
+	url := c.Host + c.Prefix + "/get_user"
+	body := req.BodyJSON(map[string]interface{}{"uid": uid})
+	resp, err := c.r.Post(url, c.getParam(), body)
 	if err != nil {
-		return d, errors.Wrap(err, "获取所有头像失败")
+		return d, errors.Wrap(err, "获取用户信息请求出错")
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		return d, errors.New(fmt.Sprintf("获取所有头像失败 %d %s", code, resp.String()))
+		return d, errors.New(fmt.Sprintf("获取用户信息请求错误 %d %s", code, resp.String()))
 	}
 	err = resp.ToJSON(&d)
 	if err != nil {
-		return d, errors.Wrap(err, "解析valid出错")
-	}
-	if len(d) < 1 {
-		return d, errors.New("获取所有头像失败")
+		return d, errors.Wrap(err, "解析用户信息出错")
 	}
 	return d, nil
-}
-
-// 生成资源url访问地址
-func (c *Sso) GenCosFileUrl(fileName string) string {
-	// 使用typea 办法 详情看 https://cloud.tencent.com/document/product/228/33115#typea
-	CdnExpired, _ := time.ParseDuration(c.CdnExpired) // 10分钟链接过期
-	nowTime := time.Now().Add(CdnExpired)
-	nowTimeStr := fmt.Sprintf("%d", nowTime.Unix())
-	randStr := RandString(12)
-	uid := fmt.Sprintf("%d", 0)
-	md5HashStr := fmt.Sprintf("%s-%s-%s-%s-%s", fileName, nowTimeStr, randStr, uid, c.CdnSecret)
-	md5Str := c.GetMD5Encode(md5HashStr)
-	url := c.CdnPrefixUrl + fileName + "?sign=" + nowTimeStr + "-" + randStr + "-" + uid + "-" + md5Str
-	return url
-}
-
-// 获取字符串md5
-func (c *Sso) GetMD5Encode(data string) string {
-	h := md5.New()
-	h.Write([]byte(data))
-	return hex.EncodeToString(h.Sum(nil))
 }
