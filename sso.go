@@ -53,8 +53,20 @@ func (c *Sso) randomStr(n int) string {
 	return fmt.Sprintf("%x", randBytes)
 }
 
+// 获取当前时间戳文本
+func (c *Sso) getTimeUnixStr() string {
+	return fmt.Sprintf("%d", time.Now().Unix())
+}
+
+// 生成一次加密
+func (c *Sso) Sign() (string, string, string) {
+	rs := c.randomStr(16)
+	us := c.getTimeUnixStr()
+	return c.s(rs, us), rs, us
+}
+
 // 加密方法
-func (c *Sso) RunSign(randomStr, timeUnix string) string {
+func (c *Sso) s(randomStr, timeUnix string) string {
 	h := md5.New()
 	h.Write([]byte(randomStr))
 	h.Write([]byte(c.SecretKey))
@@ -64,7 +76,7 @@ func (c *Sso) RunSign(randomStr, timeUnix string) string {
 
 // 验证加密
 func (c *Sso) CheckSign(sign, randomStr, timeUnix string) bool {
-	nowSign := c.RunSign(randomStr, timeUnix)
+	nowSign := c.s(randomStr, timeUnix)
 	return sign == nowSign
 }
 
