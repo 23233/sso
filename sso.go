@@ -82,7 +82,16 @@ func (c *Sso) CheckSign(sign, randomStr, timeUnix string) bool {
 
 // GetVerifyUrl 生成核验的url 前端使用iframe post message 获取ticket
 func (c *Sso) GetVerifyUrl() string {
-	return c.Host + c.Prefix + "/verify" + "?public_key=" + c.PublicKey
+	return c.urlGen("verify")
+}
+
+// GetLoginUrl 获取登录必备参数
+func (c *Sso) GetLoginUrl() string {
+	return c.urlGen("login")
+}
+
+func (c *Sso) urlGen(p string) string {
+	return c.Host + c.Prefix + "/" + p + "?public_key=" + c.PublicKey
 }
 
 // RunTr 发起交易 receipt 是否是商品收款
