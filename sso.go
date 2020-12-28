@@ -120,8 +120,10 @@ func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, i
 func (c *Sso) TicketGetUser(ticket string) (UserInfo, error) {
 	var d UserInfo
 	url := c.Host + c.Prefix + "/ticket_get_user"
-	body := req.BodyJSON(map[string]interface{}{"ticket": ticket})
-	resp, err := c.r.Post(url, c.getParam(), body)
+	var b TicketGetUserReq
+	b.Ticket = ticket
+	b.Sign, b.RandomStr, b.T = c.Sign()
+	resp, err := c.r.Post(url, c.getParam(), req.BodyJSON(b))
 	if err != nil {
 		return d, errors.Wrap(err, "发送ticket验证请求出错")
 	}

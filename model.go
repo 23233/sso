@@ -23,6 +23,12 @@ type ProductReceipt struct {
 	SignBase
 }
 
+// ticket获取用户
+type TicketGetUserReq struct {
+	Ticket string `json:"ticket"`
+	SignBase
+}
+
 // 用户信息
 type UserInfo struct {
 	Uid       string `json:"uid"`
