@@ -54,17 +54,17 @@ func (c *Sso) randomStr(n int) string {
 }
 
 // 加密方法
-func (c *Sso) runSign(secretKey, randomStr, timeUnix string) string {
+func (c *Sso) RunSign(randomStr, timeUnix string) string {
 	h := md5.New()
 	h.Write([]byte(randomStr))
-	h.Write([]byte(secretKey))
+	h.Write([]byte(c.SecretKey))
 	h.Write([]byte(timeUnix))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
 // 验证加密
-func (c *Sso) checkSign(sign, randomStr, timeUnix string) bool {
-	nowSign := c.runSign(c.SecretKey, randomStr, timeUnix)
+func (c *Sso) CheckSign(sign, randomStr, timeUnix string) bool {
+	nowSign := c.RunSign(randomStr, timeUnix)
 	return sign == nowSign
 }
 
