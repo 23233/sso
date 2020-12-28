@@ -68,8 +68,8 @@ func (c *Sso) CheckSign(sign, randomStr, timeUnix string) bool {
 	return sign == nowSign
 }
 
-// getVerifyUrl 生成核验的url 前端使用iframe post message 获取ticket
-func (c *Sso) getVerifyUrl() string {
+// GetVerifyUrl 生成核验的url 前端使用iframe post message 获取ticket
+func (c *Sso) GetVerifyUrl() string {
 	return c.Host + c.Prefix + "/verify" + "?public_key=" + c.PublicKey
 }
 
