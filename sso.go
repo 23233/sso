@@ -25,7 +25,7 @@ type Sso struct {
 
 func New(publicKey, secretKey string) Sso {
 	Sdk = Sso{
-		Host:      "https://sso.rycsg.com",
+		Host:      "https://www.resok.cn",
 		PublicKey: publicKey,
 		SecretKey: secretKey,
 		r:         req.New(),
