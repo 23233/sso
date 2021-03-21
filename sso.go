@@ -1,4 +1,4 @@
-package sso
+package sso_sdk
 
 import (
 	"crypto/md5"

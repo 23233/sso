@@ -1,1 +1,1 @@
-package sso
+package sso_sdk

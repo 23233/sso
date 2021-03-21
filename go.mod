@@ -1,4 +1,4 @@
-module github.com/23233/sso
+module github.com/23233/sso_sdk
 
 go 1.14
 

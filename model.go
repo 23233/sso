@@ -1,4 +1,4 @@
-package sso
+package sso_sdk
 
 // 签名请求基础
 type SignBase struct {
