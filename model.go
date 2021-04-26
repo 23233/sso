@@ -50,3 +50,13 @@ type ProductPay struct {
 type ValidTicketReq struct {
 	Ticket string `json:"ticket"`
 }
+
+// 上传key请求resp
+type UploadKeyResp struct {
+	SecretID     string
+	SecretKey    string
+	SessionToken string
+	ExpiredTime  uint64
+	Prefix       string
+	Visit        string
+}

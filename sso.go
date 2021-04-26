@@ -19,7 +19,6 @@ type Sso struct {
 	Host      string
 	PublicKey string
 	SecretKey string
-	r         *req.Req
 	Prefix    string
 }
 
@@ -28,10 +27,8 @@ func New(publicKey, secretKey string) Sso {
 		Host:      "https://www.resok.cn",
 		PublicKey: publicKey,
 		SecretKey: secretKey,
-		r:         req.New(),
 		Prefix:    "/o",
 	}
-	Sdk.r.SetTimeout(10 * time.Second)
 	return Sdk
 }
 
@@ -44,6 +41,13 @@ func (c *Sso) getParam() req.Param {
 	return req.Param{
 		"public_key": c.PublicKey,
 	}
+}
+
+// 生成一个请求req
+func (c *Sso) getReq() *req.Req {
+	r := req.New()
+	r.SetTimeout(10 * time.Second)
+	return r
 }
 
 // 生成随机字符串
@@ -90,6 +94,7 @@ func (c *Sso) GetLoginUrl() string {
 	return c.UrlGen("", "login")
 }
 
+// UrlGen 请求url路径生成
 func (c *Sso) UrlGen(prefix string, p string) string {
 	return c.Host + prefix + "/" + p + "?public_key=" + c.PublicKey
 }
@@ -106,7 +111,8 @@ func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, i
 		url += "/payment"
 		msg = "转账"
 	}
-	resp, err := c.r.Post(url, c.getParam(), req.BodyJSON(data))
+
+	resp, err := c.getReq().Post(url, c.getParam(), req.BodyJSON(data))
 	if err != nil {
 		return d, errors.Wrap(err, "发起交易出错"), 0
 	}
@@ -132,7 +138,7 @@ func (c *Sso) TicketGetUser(ticket string) (UserInfo, error) {
 	var b TicketGetUserReq
 	b.Ticket = ticket
 	b.Sign, b.RandomStr, b.T = c.Sign()
-	resp, err := c.r.Post(url, c.getParam(), req.BodyJSON(b))
+	resp, err := c.getReq().Post(url, c.getParam(), req.BodyJSON(b))
 	if err != nil {
 		return d, errors.Wrap(err, "发送ticket验证请求出错")
 	}
@@ -152,7 +158,7 @@ func (c *Sso) UidGetUserInfo(uid string) (UserInfo, error) {
 	var d UserInfo
 	url := c.Host + c.Prefix + "/get_user"
 	body := req.BodyJSON(map[string]interface{}{"uid": uid})
-	resp, err := c.r.Post(url, c.getParam(), body)
+	resp, err := c.getReq().Post(url, c.getParam(), body)
 	if err != nil {
 		return d, errors.Wrap(err, "获取用户信息请求出错")
 	}
@@ -163,6 +169,25 @@ func (c *Sso) UidGetUserInfo(uid string) (UserInfo, error) {
 	err = resp.ToJSON(&d)
 	if err != nil {
 		return d, errors.Wrap(err, "解析用户信息出错")
+	}
+	return d, nil
+}
+
+// GetUploadKey 获取上传凭据
+func (c *Sso) GetUploadKey() (UploadKeyResp, error) {
+	var d UploadKeyResp
+	url := c.UrlGen(c.Prefix, "/upload_key")
+	resp, err := c.getReq().Get(url)
+	if err != nil {
+		return d, errors.Wrap(err, "获取上传凭据请求出错")
+	}
+	code := resp.Response().StatusCode
+	if code != http.StatusOK {
+		return d, errors.New(fmt.Sprintf("获取上传凭据请求出错 %d %s", code, resp.String()))
+	}
+	err = resp.ToJSON(&d)
+	if err != nil {
+		return d, errors.Wrap(err, "解析上传凭据请求出错")
 	}
 	return d, nil
 }
