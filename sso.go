@@ -62,7 +62,7 @@ func (c *Sso) getTimeUnixStr() string {
 	return fmt.Sprintf("%d", time.Now().Unix())
 }
 
-// 生成一次加密
+// Sign 生成一次加密
 func (c *Sso) Sign() (string, string, string) {
 	rs := c.randomStr(16)
 	us := c.getTimeUnixStr()
@@ -78,37 +78,27 @@ func (c *Sso) s(randomStr, timeUnix string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// 验证加密
+// CheckSign 验证加密
 func (c *Sso) CheckSign(sign, randomStr, timeUnix string) bool {
 	nowSign := c.s(randomStr, timeUnix)
 	return sign == nowSign
 }
 
-// GetVerifyUrl 生成核验的url 前端使用iframe post message 获取ticket
-func (c *Sso) GetVerifyUrl() string {
-	return c.UrlGen(c.Prefix, "verify")
-}
-
-// GetLoginUrl 获取登录必备参数
-func (c *Sso) GetLoginUrl() string {
-	return c.UrlGen("", "login")
-}
-
 // UrlGen 请求url路径生成
 func (c *Sso) UrlGen(prefix string, p string) string {
-	return c.Host + prefix + "/" + p + "?public_key=" + c.PublicKey
+	return c.Host + prefix + p + "?public_key=" + c.PublicKey
 }
 
 // RunTr 发起交易 receipt 是否是商品收款
 func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, int) {
 	var d ProductPayResp
-	url := c.Host + c.Prefix
 	var msg string
+	var url string
 	if receipt {
-		url += "/receipt"
+		url = c.UrlGen(c.Prefix, "receipt")
 		msg = "商品收款"
 	} else {
-		url += "/payment"
+		url = c.UrlGen(c.Prefix, "payment")
 		msg = "转账"
 	}
 
@@ -131,32 +121,29 @@ func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, i
 	return d, nil, code
 }
 
-// TicketGetUser 通过ticket获取用户
-func (c *Sso) TicketGetUser(ticket string) (UserInfo, error) {
-	var d UserInfo
-	url := c.Host + c.Prefix + "/ticket_get_user"
-	var b TicketGetUserReq
-	b.Ticket = ticket
-	b.Sign, b.RandomStr, b.T = c.Sign()
-	resp, err := c.getReq().Post(url, c.getParam(), req.BodyJSON(b))
+// ProductPreOrder 预下单
+func (c *Sso) ProductPreOrder(data PreOrder) (PreOrderResp, error) {
+	var d PreOrderResp
+	url := c.UrlGen(c.Prefix, "/pre_order")
+	resp, err := c.getReq().Post(url, c.getParam(), req.BodyJSON(data))
 	if err != nil {
-		return d, errors.Wrap(err, "发送ticket验证请求出错")
+		return d, errors.Wrap(err, "预下单出错")
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		return d, errors.New(fmt.Sprintf("发送ticket验证错误 %d %s", code, resp.String()))
+		return d, errors.New(fmt.Sprintf("预下单相应失败 %d %s", code, resp.String()))
 	}
 	err = resp.ToJSON(&d)
 	if err != nil {
-		return d, errors.Wrap(err, "解析用户信息出错")
+		return d, errors.Wrap(err, "解析预下单返回失败")
 	}
 	return d, nil
 }
 
 // UidGetUserInfo 通过uid获取用户信息
-func (c *Sso) UidGetUserInfo(uid string) (UserInfo, error) {
-	var d UserInfo
-	url := c.Host + c.Prefix + "/get_user"
+func (c *Sso) UidGetUserInfo(uid string) (UidGetUserResp, error) {
+	var d UidGetUserResp
+	url := c.UrlGen(c.Prefix, "/get_user")
 	body := req.BodyJSON(map[string]interface{}{"uid": uid})
 	resp, err := c.getReq().Post(url, c.getParam(), body)
 	if err != nil {

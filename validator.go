@@ -1,7 +1,12 @@
 package sso_sdk
 
-// 商品收款返回
+// ProductPayResp 商品收款返回
 type ProductPayResp struct {
-	Order  string `json:"order" form:"order"`
-	Detail string `json:"detail" form:"detail"`
+	OrderNo string `json:"order_no" form:"order_no"`
+	Detail  string `json:"detail" form:"detail"`
+}
+
+// PreOrderResp 预下单返回
+type PreOrderResp struct {
+	PreOrderId string `json:"pre_order_id" form:"pre_order_id"`
 }
