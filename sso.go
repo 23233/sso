@@ -178,3 +178,43 @@ func (c *Sso) GetUploadKey() (UploadKeyResp, error) {
 	}
 	return d, nil
 }
+
+// PreOrderIdGetSuccessList 通过预下单ID获取成交列表
+func (c *Sso) PreOrderIdGetSuccessList(preOrderId string, page, pageSize uint16) ([]BalanceChangeHistoryResp, error) {
+	var r = make([]BalanceChangeHistoryResp, 0)
+	url := c.UrlGen(c.Prefix, "/pre_order_id")
+	params := req.Param{"pre_order_id": preOrderId, "page": page, "page_size": pageSize}
+	resp, err := c.getReq().Get(url, params)
+	if err != nil {
+		return nil, errors.Wrap(err, "获取成交列表失败")
+	}
+	code := resp.Response().StatusCode
+	if code != http.StatusOK {
+		return nil, errors.New(fmt.Sprintf("获取成交列表请求出错 %d %s", code, resp.String()))
+	}
+	err = resp.ToJSON(&r)
+	if err != nil {
+		return nil, errors.Wrap(err, "解析成交记录失败")
+	}
+	return r, nil
+}
+
+// OrderIdGetInfo 通过orderId获取成交记录
+func (c *Sso) OrderIdGetInfo(orderId string) (BalanceChangeHistoryResp, error) {
+	var r BalanceChangeHistoryResp
+	url := c.UrlGen(c.Prefix, "/order_id")
+	params := req.Param{"order_id": orderId}
+	resp, err := c.getReq().Get(url, params)
+	if err != nil {
+		return r, errors.Wrap(err, "获取成交列表失败")
+	}
+	code := resp.Response().StatusCode
+	if code != http.StatusOK {
+		return r, errors.New(fmt.Sprintf("获取成交列表请求出错 %d %s", code, resp.String()))
+	}
+	err = resp.ToJSON(&r)
+	if err != nil {
+		return r, errors.Wrap(err, "解析成交记录失败")
+	}
+	return r, nil
+}
