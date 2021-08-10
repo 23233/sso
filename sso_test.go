@@ -56,4 +56,11 @@ func TestNew(t *testing.T) {
 	}
 	println(len(l.Data))
 
+	getInfo, err := s.OrderIdGetInfo("dc83a0776c754f1aaf513c9c9b04176a")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Log(getInfo.PreOrder.Desc)
+
 }

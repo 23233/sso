@@ -209,10 +209,14 @@ func (c *Sso) PreOrderIdGetSuccessList(preOrderId string, page, pageSize uint64)
 }
 
 // OrderIdGetInfo 通过orderId获取成交记录
-func (c *Sso) OrderIdGetInfo(orderId string) (BalanceChangeHistoryResp, error) {
-	var r BalanceChangeHistoryResp
+func (c *Sso) OrderIdGetInfo(orderId string) (GetOrderInfoResp, error) {
+	var r GetOrderInfoResp
 	url := c.UrlGen(c.Prefix, "/order_id")
 	params := req.Param{"order_id": orderId}
+	sign, st, t := Sdk.Sign()
+	params["sign"] = sign
+	params["random_str"] = st
+	params["t"] = t
 	resp, err := c.getReq().Get(url, params)
 	if err != nil {
 		return r, errors.Wrap(err, "获取成交列表失败")

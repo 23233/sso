@@ -20,6 +20,11 @@ type BalanceChangeHistoryResp struct {
 	Total    uint64                     `json:"total"` //
 }
 
+type GetOrderInfoResp struct {
+	Pay      BalanceChangeHistoryItem `json:"pay" form:"pay"`
+	PreOrder PreOrder                 `json:"pre_order"`
+}
+
 // BalanceChangeHistoryItem 成交记录
 type BalanceChangeHistoryItem struct {
 	Id          string    `json:"id,omitempty" url:"id" form:"id"`
@@ -35,6 +40,7 @@ type BalanceChangeHistoryItem struct {
 	Remark      string    `json:"remark,omitempty" url:"remark" form:"remark"`
 	OrderUid    string    `json:"order_uid,omitempty" url:"order_uid" form:"order_uid"`
 	PublicKey   string    `json:"public_key,omitempty" url:"public_key" form:"public_key"`
+	Extra       string    `json:"extra" url:"extra" from:"extra"`
 }
 
 type UidGetUserReq struct {
