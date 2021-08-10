@@ -28,4 +28,32 @@ func TestNew(t *testing.T) {
 	}
 	t.Log(resp.Prefix)
 
+	// 预下单
+	order, err := s.ProductPreOrder(PreOrder{
+		Name:  "测试预下单",
+		Price: 1,
+		Desc:  "描述",
+		Extra: "aaaa",
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Log(order.PreOrderId)
+
+	// 获取用户信息
+	info, err := s.UidGetUserInfo("3ITM5gDN3MDMzA")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Log(info.Info.NickName)
+
+	l, err := s.PreOrderIdGetSuccessList(order.PreOrderId, 1, 10)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	println(len(l.Data))
+
 }

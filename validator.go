@@ -13,8 +13,15 @@ type PreOrderResp struct {
 	PreOrderId string `json:"pre_order_id" form:"pre_order_id"`
 }
 
-// BalanceChangeHistoryResp 成交记录
 type BalanceChangeHistoryResp struct {
+	Page     uint64                     `json:"page"`
+	PageSize uint64                     `json:"page_size"`
+	Data     []BalanceChangeHistoryItem `json:"data"`
+	Total    uint64                     `json:"total"` //
+}
+
+// BalanceChangeHistoryItem 成交记录
+type BalanceChangeHistoryItem struct {
 	Id          string    `json:"id,omitempty" url:"id" form:"id"`
 	UpdateAt    time.Time `json:"update_at" url:"update_at" form:"update_at"`
 	CreateAt    time.Time `json:"create_at" url:"create_at" form:"create_at"`
@@ -28,4 +35,24 @@ type BalanceChangeHistoryResp struct {
 	Remark      string    `json:"remark,omitempty" url:"remark" form:"remark"`
 	OrderUid    string    `json:"order_uid,omitempty" url:"order_uid" form:"order_uid"`
 	PublicKey   string    `json:"public_key,omitempty" url:"public_key" form:"public_key"`
+}
+
+type UidGetUserReq struct {
+	Uid string `json:"uid" form:"uid"`
+	SignBase
+}
+
+type UidGetUserResp struct {
+	User UserInfo     `json:"user"`
+	Info BaseUserInfo `json:"info"`
+}
+
+// UploadKeyResp 上传key请求resp
+type UploadKeyResp struct {
+	SecretID     string
+	SecretKey    string
+	SessionToken string
+	ExpiredTime  uint64
+	Prefix       string
+	Visit        string
 }

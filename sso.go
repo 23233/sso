@@ -91,6 +91,7 @@ func (c *Sso) UrlGen(prefix string, p string) string {
 
 // RunTr 发起交易 receipt 是否是商品收款
 func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, int) {
+	data.GenSign()
 	var d ProductPayResp
 	var msg string
 	var url string
@@ -123,9 +124,10 @@ func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, i
 
 // ProductPreOrder 预下单
 func (c *Sso) ProductPreOrder(data PreOrder) (PreOrderResp, error) {
+	data.GenSign()
 	var d PreOrderResp
 	url := c.UrlGen(c.Prefix, "/pre_order")
-	resp, err := c.getReq().Post(url, c.getParam(), req.BodyJSON(data))
+	resp, err := c.getReq().Post(url, req.BodyJSON(data))
 	if err != nil {
 		return d, errors.Wrap(err, "预下单出错")
 	}
@@ -144,8 +146,10 @@ func (c *Sso) ProductPreOrder(data PreOrder) (PreOrderResp, error) {
 func (c *Sso) UidGetUserInfo(uid string) (UidGetUserResp, error) {
 	var d UidGetUserResp
 	url := c.UrlGen(c.Prefix, "/get_user")
-	body := req.BodyJSON(map[string]interface{}{"uid": uid})
-	resp, err := c.getReq().Post(url, c.getParam(), body)
+	var p UidGetUserReq
+	p.Uid = uid
+	p.GenSign()
+	resp, err := c.getReq().Post(url, req.BodyJSON(p))
 	if err != nil {
 		return d, errors.Wrap(err, "获取用户信息请求出错")
 	}
@@ -180,10 +184,15 @@ func (c *Sso) GetUploadKey() (UploadKeyResp, error) {
 }
 
 // PreOrderIdGetSuccessList 通过预下单ID获取成交列表
-func (c *Sso) PreOrderIdGetSuccessList(preOrderId string, page, pageSize uint16) ([]BalanceChangeHistoryResp, error) {
-	var r = make([]BalanceChangeHistoryResp, 0)
+func (c *Sso) PreOrderIdGetSuccessList(preOrderId string, page, pageSize uint64) (*BalanceChangeHistoryResp, error) {
+	var r = new(BalanceChangeHistoryResp)
 	url := c.UrlGen(c.Prefix, "/pre_order_id")
 	params := req.Param{"pre_order_id": preOrderId, "page": page, "page_size": pageSize}
+	sign, st, t := Sdk.Sign()
+	params["sign"] = sign
+	params["random_str"] = st
+	params["t"] = t
+
 	resp, err := c.getReq().Get(url, params)
 	if err != nil {
 		return nil, errors.Wrap(err, "获取成交列表失败")
