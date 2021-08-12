@@ -30,10 +30,13 @@ func TestNew(t *testing.T) {
 
 	// 预下单
 	order, err := s.ProductPreOrder(PreOrder{
-		Name:  "测试预下单",
-		Price: 1,
-		Desc:  "描述",
-		Extra: "aaaa",
+		Name:      "测试预下单",
+		Price:     1,
+		Desc:      "描述",
+		Extra:     "aaaa",
+		Substance: "测试sub",
+		Uid:       "uuuiiiddd",
+		Count:     10,
 	})
 	if err != nil {
 		t.Error(err)

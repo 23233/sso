@@ -66,11 +66,11 @@ func (c *Sso) getTimeUnixStr() string {
 func (c *Sso) Sign() (string, string, string) {
 	rs := c.randomStr(16)
 	us := c.getTimeUnixStr()
-	return c.s(rs, us), rs, us
+	return c.sign(rs, us), rs, us
 }
 
 // 加密方法
-func (c *Sso) s(randomStr, timeUnix string) string {
+func (c *Sso) sign(randomStr, timeUnix string) string {
 	h := md5.New()
 	h.Write([]byte(randomStr))
 	h.Write([]byte(c.SecretKey))
@@ -80,7 +80,7 @@ func (c *Sso) s(randomStr, timeUnix string) string {
 
 // CheckSign 验证加密
 func (c *Sso) CheckSign(sign, randomStr, timeUnix string) bool {
-	nowSign := c.s(randomStr, timeUnix)
+	nowSign := c.sign(randomStr, timeUnix)
 	return sign == nowSign
 }
 
@@ -113,7 +113,7 @@ func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, i
 		if code == http.StatusUpgradeRequired {
 			return d, errors.New("余额不足"), code
 		}
-		return d, errors.New(fmt.Sprintf("%s响应错误 %d %s", msg, code, resp.String())), code
+		return d, errors.New(fmt.Sprintf("%s响应错误 %d %sign", msg, code, resp.String())), code
 	}
 	err = resp.ToJSON(&d)
 	if err != nil {
@@ -133,7 +133,7 @@ func (c *Sso) ProductPreOrder(data PreOrder) (PreOrderResp, error) {
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		return d, errors.New(fmt.Sprintf("预下单相应失败 %d %s", code, resp.String()))
+		return d, errors.New(fmt.Sprintf("预下单相应失败 %d %sign", code, resp.String()))
 	}
 	err = resp.ToJSON(&d)
 	if err != nil {
@@ -155,7 +155,7 @@ func (c *Sso) UidGetUserInfo(uid string) (UidGetUserResp, error) {
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		return d, errors.New(fmt.Sprintf("获取用户信息请求错误 %d %s", code, resp.String()))
+		return d, errors.New(fmt.Sprintf("获取用户信息请求错误 %d %sign", code, resp.String()))
 	}
 	err = resp.ToJSON(&d)
 	if err != nil {
@@ -174,7 +174,7 @@ func (c *Sso) GetUploadKey() (UploadKeyResp, error) {
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		return d, errors.New(fmt.Sprintf("获取上传凭据请求出错 %d %s", code, resp.String()))
+		return d, errors.New(fmt.Sprintf("获取上传凭据请求出错 %d %sign", code, resp.String()))
 	}
 	err = resp.ToJSON(&d)
 	if err != nil {
@@ -199,7 +199,7 @@ func (c *Sso) PreOrderIdGetSuccessList(preOrderId string, page, pageSize uint64)
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("获取成交列表请求出错 %d %s", code, resp.String()))
+		return nil, errors.New(fmt.Sprintf("获取成交列表请求出错 %d %sign", code, resp.String()))
 	}
 	err = resp.ToJSON(&r)
 	if err != nil {
@@ -223,7 +223,7 @@ func (c *Sso) OrderIdGetInfo(orderId string) (GetOrderInfoResp, error) {
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		return r, errors.New(fmt.Sprintf("获取成交列表请求出错 %d %s", code, resp.String()))
+		return r, errors.New(fmt.Sprintf("获取成交列表请求出错 %d %sign", code, resp.String()))
 	}
 	err = resp.ToJSON(&r)
 	if err != nil {
