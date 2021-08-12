@@ -1,5 +1,7 @@
 package sso_sdk
 
+// 各类事件回调传入的参数
+
 // TrSendBodyResp 收银台收款
 type TrSendBodyResp struct {
 	Event     string `json:"event,omitempty"` // cash_receive

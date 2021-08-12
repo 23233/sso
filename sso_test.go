@@ -59,11 +59,11 @@ func TestNew(t *testing.T) {
 	}
 	println(len(l.Data))
 
-	getInfo, err := s.OrderIdGetInfo("dc83a0776c754f1aaf513c9c9b04176a")
+	getInfo, err := s.OrderIdGetInfo("4213bcd65bf64312a27191f6ca46bacc")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	t.Log(getInfo.PreOrder.Desc)
+	t.Log(getInfo.PreOrder.ProductInfo.Desc)
 
 }
