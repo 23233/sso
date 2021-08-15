@@ -95,10 +95,10 @@ func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, i
 	var msg string
 	var url string
 	if receipt {
-		url = c.UrlGen(c.Prefix, "receipt")
+		url = c.UrlGen(c.Prefix, "/receipt")
 		msg = "商品收款"
 	} else {
-		url = c.UrlGen(c.Prefix, "payment")
+		url = c.UrlGen(c.Prefix, "/payment")
 		msg = "转账"
 	}
 
