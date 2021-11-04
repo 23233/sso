@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -228,6 +229,37 @@ func (c *Sso) OrderIdGetInfo(orderId string) (GetOrderInfoResp, error) {
 	err = resp.ToJSON(&r)
 	if err != nil {
 		return r, errors.Wrap(err, "解析成交记录失败")
+	}
+	return r, nil
+}
+
+// UploadImage 上传图片
+func (c *Sso) UploadImage(file *os.File, fileName string, maxWidth int) (UploadImageResp, error) {
+	var r UploadImageResp
+	url := c.UrlGen(c.Prefix, "/img_upload")
+	params := req.Param{}
+	sign, st, t := Sdk.Sign()
+	params["sign"] = sign
+	params["random_str"] = st
+	params["t"] = t
+	params["max_width"] = maxWidth
+	fileForm := req.FileUpload{
+		File:      file,
+		FieldName: "file",   // FieldName 是表单字段名
+		FileName:  fileName, // Filename 是要上传的文件的名称，我们使用它来猜测mimetype，并将其上传到服务器上
+	}
+
+	resp, err := c.getReq().Post(url, params, fileForm)
+	if err != nil {
+		return r, errors.Wrap(err, "发起图像上传失败")
+	}
+	code := resp.Response().StatusCode
+	if code != http.StatusOK {
+		return r, errors.New(fmt.Sprintf("上传图像失败 %d %s", code, resp.String()))
+	}
+	err = resp.ToJSON(&r)
+	if err != nil {
+		return r, errors.Wrap(err, "解析上传图像结果失败")
 	}
 	return r, nil
 }

@@ -75,3 +75,8 @@ type UploadKeyResp struct {
 	Prefix       string
 	Visit        string
 }
+
+type UploadImageResp struct {
+	Origin    string `json:"origin"`
+	Thumbnail string `json:"thumbnail"`
+}

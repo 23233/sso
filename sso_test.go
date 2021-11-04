@@ -66,4 +66,16 @@ func TestNew(t *testing.T) {
 	}
 	t.Log(getInfo.PreOrder.ProductInfo.Desc)
 
+	fd, err := os.Open("./t.png")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	r, err := s.UploadImage(fd, "t.png", 1920)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	println(r.Origin)
+	println(r.Thumbnail)
 }
