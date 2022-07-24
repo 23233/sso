@@ -80,3 +80,16 @@ type UploadImageResp struct {
 	Origin    string `json:"origin"`
 	Thumbnail string `json:"thumbnail"`
 }
+
+// JsonSchemaReq 用户填写了表单的回调
+type JsonSchemaReq struct {
+	SendUserInfo struct {
+		Mid       string `json:"mid" form:"mid" comment:"用户id" validate:"required"`
+		PublicKey string `json:"public_key,omitempty" form:"public_key,omitempty"`
+	} `json:"send_user_info" form:"send_user_info" validate:"required"`
+	SendSignInfo SignBase `json:"send_sign_info,omitempty" form:"send_sign_info,omitempty"`
+	FormId       string   `json:"form_id" form:"form_id" comment:"表单ID" validate:"required"`
+	FormEng      string   `json:"form_eng,omitempty" form:"form_eng,omitempty" comment:"表单英文唯一"`
+	Data         string   `json:"data" form:"data" comment:"表单数据" validate:"required"`
+	InjectData   string   `json:"inject_data,omitempty" form:"inject_data,omitempty" comment:"注入数据"`
+}
