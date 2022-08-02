@@ -158,6 +158,9 @@ func TestChangeUserPower(t *testing.T) {
 	}
 
 	var d PowerChangeReq
+	d.Uid = "test_power"
+	d.Open = true
+	d.Reason = "通过"
 	success, err := s.ChangeUserPower(d)
 	if err != nil {
 		t.Error(err)
