@@ -83,6 +83,13 @@ func (c *UidGetUserResp) HasManagePower(name string) bool {
 	return false
 }
 
+type PowerChangeReq struct {
+	UidGetUserReq
+	Eng    string `json:"eng" form:"eng"`
+	Open   bool   `json:"open" form:"open" `    // 打开还是关闭
+	Reason string `json:"reason" form:"reason"` // 理由
+}
+
 // UploadKeyResp 上传key请求resp
 type UploadKeyResp struct {
 	SecretID     string

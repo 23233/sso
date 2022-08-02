@@ -165,6 +165,23 @@ func (c *Sso) UidGetUserInfo(uid string) (UidGetUserResp, error) {
 	return d, nil
 }
 
+// ChangeUserPower 主动变更用户能力
+func (c *Sso) ChangeUserPower(data PowerChangeReq) (bool, error) {
+	data.GenSign()
+	url := c.UrlGen(c.Prefix, "/power_change")
+	resp, err := c.getReq().Post(url, req.BodyJSON(data))
+	if err != nil {
+		return false, errors.Wrap(err, "变更用户能力出错")
+	}
+	code := resp.Response().StatusCode
+	if code != http.StatusOK {
+		return false, errors.New(fmt.Sprintf("变更用户能力失败 %d %sign", code, resp.String()))
+	}
+
+	return true, nil
+
+}
+
 // GetUploadKey 获取上传凭据
 func (c *Sso) GetUploadKey() (UploadKeyResp, error) {
 	var d UploadKeyResp

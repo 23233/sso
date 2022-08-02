@@ -1,6 +1,7 @@
 package sso_sdk
 
 import (
+	"github.com/pkg/errors"
 	"os"
 	"testing"
 )
@@ -12,58 +13,129 @@ func GetEnv(key, fallback string) string {
 	return fallback
 }
 
-func TestNew(t *testing.T) {
-
+func getSdk() (*Sso, error) {
 	publicKey := GetEnv("public_key", "")
 	secretKey := GetEnv("secret_key", "")
 	if len(publicKey) < 1 || len(secretKey) < 1 {
-		t.Error("未获取到参数")
-		return
+		return nil, errors.New("未找到参数")
 	}
 	s := New(publicKey, secretKey)
 	s.SetHost("http://127.0.0.1:7778")
-	//
-	//t.Run("上传key", func(t *testing.T) {
-	//	getUpload(t,s)
-	//})
-	//
-	//// 预下单
-	//order, err := s.ProductPreOrder(PreOrder{
-	//	Name:      "测试预下单",
-	//	Price:     1,
-	//	Desc:      "描述",
-	//	Extra:     "aaaa",
-	//	Substance: "测试sub",
-	//	Uid:       "uuuiiiddd",
-	//	Count:     10,
-	//})
-	//if err != nil {
-	//	t.Error(err)
-	//	return
-	//}
-	//t.Log(order.PreOrderId)
-	//
-	//// 获取用户信息
-	//info, err := s.UidGetUserInfo("3ITM5gDN3MDMzA")
-	//if err != nil {
-	//	t.Error(err)
-	//	return
-	//}
-	//t.Log(info.Info.NickName)
-	//
-	//l, err := s.PreOrderIdGetSuccessList(order.PreOrderId, 1, 10)
-	//if err != nil {
-	//	t.Error(err)
-	//	return
-	//}
-	//println(len(l.Data))
-	//
-	//getInfo, err := s.OrderIdGetInfo("4213bcd65bf64312a27191f6ca46bacc")
-	//if err != nil {
-	//	t.Error(err)
-	//	return
-	//}
-	//t.Log(getInfo.PreOrder.ProductInfo.Desc)
+	return &s, nil
+}
+
+func TestNew(t *testing.T) {
+
+	s, err := getSdk()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Log(s.Host)
+
+}
+
+func TestUpload(t *testing.T) {
+	s, err := getSdk()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	resp, err := s.GetUploadKey()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Log(resp.Prefix)
+}
+
+func TestPreOrder(t *testing.T) {
+	s, err := getSdk()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	// 预下单
+	order, err := s.ProductPreOrder(PreOrder{
+		Name:      "测试预下单",
+		Price:     1,
+		Desc:      "描述",
+		Extra:     "aaaa",
+		Substance: "测试sub",
+		Uid:       "uuuiiiddd",
+		Count:     10,
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Log(order.PreOrderId)
+}
+func TestGetUserInfo(t *testing.T) {
+	s, err := getSdk()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	// 获取用户信息
+	info, err := s.UidGetUserInfo("3ITM5gDN3MDMzA")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Log(info.Info.NickName)
+
+}
+
+func TestPreOrderGetSuccessList(t *testing.T) {
+	s, err := getSdk()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	// 预下单
+	order, err := s.ProductPreOrder(PreOrder{
+		Name:      "测试预下单",
+		Price:     1,
+		Desc:      "描述",
+		Extra:     "aaaa",
+		Substance: "测试sub",
+		Uid:       "uuuiiiddd",
+		Count:     10,
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	l, err := s.PreOrderIdGetSuccessList(order.PreOrderId, 1, 10)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	println(len(l.Data))
+}
+func TestOrderGetInfo(t *testing.T) {
+	s, err := getSdk()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	getInfo, err := s.OrderIdGetInfo("4213bcd65bf64312a27191f6ca46bacc")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Log(getInfo.PreOrder.ProductInfo.Desc)
+
+}
+func TestImgUpload(t *testing.T) {
+	s, err := getSdk()
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	fd, err := os.Open("./t.png")
 	if err != nil {
@@ -78,12 +150,27 @@ func TestNew(t *testing.T) {
 	println(r.Origin)
 	println(r.Thumbnail)
 }
-
-func getUpload(t *testing.T, s Sso) {
-	resp, err := s.GetUploadKey()
+func TestChangeUserPower(t *testing.T) {
+	s, err := getSdk()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	t.Log(resp.Prefix)
+
+	var d PowerChangeReq
+	success, err := s.ChangeUserPower(d)
+	if err != nil {
+		t.Error(err)
+	}
+	println(success)
+}
+
+func TestAll(t *testing.T) {
+	t.Run("获取用户信息", TestGetUserInfo)
+	t.Run("获取上传key", TestUpload)
+	t.Run("预下单", TestPreOrder)
+	t.Run("获取预下单Id获取支付成功列表", TestPreOrderGetSuccessList)
+	t.Run("通过orderId获取成交记录", TestOrderGetInfo)
+	t.Run("图片上传", TestImgUpload)
+	t.Run("变更用户能力", TestChangeUserPower)
 }
