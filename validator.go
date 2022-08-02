@@ -66,6 +66,23 @@ type UidGetUserResp struct {
 	Info BaseUserInfo `json:"info"`
 }
 
+func (c *UidGetUserResp) HasPower(name string) bool {
+	for _, power := range c.Info.Powers {
+		if name == power {
+			return true
+		}
+	}
+	return false
+}
+func (c *UidGetUserResp) HasManagePower(name string) bool {
+	for _, power := range c.Info.ManagePowers {
+		if name == power {
+			return true
+		}
+	}
+	return false
+}
+
 // UploadKeyResp 上传key请求resp
 type UploadKeyResp struct {
 	SecretID     string

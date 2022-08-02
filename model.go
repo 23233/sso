@@ -49,8 +49,10 @@ type PreOrder struct {
 
 // BaseUserInfo 基础用户信息
 type BaseUserInfo struct {
-	NickName  string `json:"nick_name"`
-	AvatarUrl string `json:"avatar_url"`
+	NickName     string   `json:"nick_name"`
+	AvatarUrl    string   `json:"avatar_url"`
+	Powers       []string `json:"powers,omitempty"`
+	ManagePowers []string `json:"manage_powers,omitempty"`
 }
 
 // UserInfo 用户信息

@@ -21,50 +21,49 @@ func TestNew(t *testing.T) {
 		return
 	}
 	s := New(publicKey, secretKey)
-	resp, err := s.GetUploadKey()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	t.Log(resp.Prefix)
-
-	// 预下单
-	order, err := s.ProductPreOrder(PreOrder{
-		Name:      "测试预下单",
-		Price:     1,
-		Desc:      "描述",
-		Extra:     "aaaa",
-		Substance: "测试sub",
-		Uid:       "uuuiiiddd",
-		Count:     10,
-	})
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	t.Log(order.PreOrderId)
-
-	// 获取用户信息
-	info, err := s.UidGetUserInfo("3ITM5gDN3MDMzA")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	t.Log(info.Info.NickName)
-
-	l, err := s.PreOrderIdGetSuccessList(order.PreOrderId, 1, 10)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	println(len(l.Data))
-
-	getInfo, err := s.OrderIdGetInfo("4213bcd65bf64312a27191f6ca46bacc")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	t.Log(getInfo.PreOrder.ProductInfo.Desc)
+	s.SetHost("http://127.0.0.1:7778")
+	//
+	//t.Run("上传key", func(t *testing.T) {
+	//	getUpload(t,s)
+	//})
+	//
+	//// 预下单
+	//order, err := s.ProductPreOrder(PreOrder{
+	//	Name:      "测试预下单",
+	//	Price:     1,
+	//	Desc:      "描述",
+	//	Extra:     "aaaa",
+	//	Substance: "测试sub",
+	//	Uid:       "uuuiiiddd",
+	//	Count:     10,
+	//})
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//t.Log(order.PreOrderId)
+	//
+	//// 获取用户信息
+	//info, err := s.UidGetUserInfo("3ITM5gDN3MDMzA")
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//t.Log(info.Info.NickName)
+	//
+	//l, err := s.PreOrderIdGetSuccessList(order.PreOrderId, 1, 10)
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//println(len(l.Data))
+	//
+	//getInfo, err := s.OrderIdGetInfo("4213bcd65bf64312a27191f6ca46bacc")
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//t.Log(getInfo.PreOrder.ProductInfo.Desc)
 
 	fd, err := os.Open("./t.png")
 	if err != nil {
@@ -78,4 +77,13 @@ func TestNew(t *testing.T) {
 	}
 	println(r.Origin)
 	println(r.Thumbnail)
+}
+
+func getUpload(t *testing.T, s Sso) {
+	resp, err := s.GetUploadKey()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Log(resp.Prefix)
 }
