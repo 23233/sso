@@ -55,3 +55,29 @@ type ProductPaySendBodyResp struct {
 	Product    ProductInfo `json:"product"`
 	SignBase
 }
+
+type PowerRespBase struct {
+	Eng string `json:"eng"`
+	Uid string `json:"uid"`
+}
+
+// PowerChangeBodyResp 用户能力变更通知
+type PowerChangeBodyResp struct {
+	SignBase
+	PowerRespBase
+	Open   bool   `json:"open"`
+	Reason string `json:"reason,omitempty"`
+}
+
+// PowerNeedVerifyBodyResp 用户能力提交申请等待审核通知
+type PowerNeedVerifyBodyResp struct {
+	SignBase
+	PowerRespBase
+}
+
+// PowerSettingChangeBodyResp 用户能力设置变更通知
+type PowerSettingChangeBodyResp struct {
+	SignBase
+	PowerRespBase
+	Body string `json:"body"`
+}

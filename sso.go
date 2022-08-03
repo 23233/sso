@@ -114,7 +114,7 @@ func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, i
 		if code == http.StatusUpgradeRequired {
 			return d, errors.New("余额不足"), code
 		}
-		return d, errors.New(fmt.Sprintf("%s响应错误 %d %sign", msg, code, resp.String())), code
+		return d, errors.New(fmt.Sprintf("%s响应错误 %d %s", msg, code, resp.String())), code
 	}
 	err = resp.ToJSON(&d)
 	if err != nil {
@@ -134,7 +134,7 @@ func (c *Sso) ProductPreOrder(data PreOrder) (PreOrderResp, error) {
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		return d, errors.New(fmt.Sprintf("预下单相应失败 %d %sign", code, resp.String()))
+		return d, errors.New(fmt.Sprintf("预下单相应失败 %d %s", code, resp.String()))
 	}
 	err = resp.ToJSON(&d)
 	if err != nil {
@@ -156,7 +156,7 @@ func (c *Sso) UidGetUserInfo(uid string) (UidGetUserResp, error) {
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		return d, errors.New(fmt.Sprintf("获取用户信息请求错误 %d %sign", code, resp.String()))
+		return d, errors.New(fmt.Sprintf("获取用户信息请求错误 %d %s", code, resp.String()))
 	}
 	err = resp.ToJSON(&d)
 	if err != nil {
@@ -175,10 +175,34 @@ func (c *Sso) ChangeUserPower(data PowerChangeReq) (bool, error) {
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		return false, errors.New(fmt.Sprintf("变更用户能力失败 %d %sign", code, resp.String()))
+		return false, errors.New(fmt.Sprintf("变更用户能力失败 %d %s", code, resp.String()))
 	}
 
 	return true, nil
+
+}
+
+// UidGetUserPowerSetting 获取用户能力设置
+func (c *Sso) UidGetUserPowerSetting(uid string, eng string) (PowerSettingResp, error) {
+	var p PowerSettingReq
+	p.Uid = uid
+	p.Eng = eng
+	p.GenSign()
+	url := c.UrlGen(c.Prefix, "/power_setting_new")
+	var d PowerSettingResp
+	resp, err := c.getReq().Post(url, req.BodyJSON(p))
+	if err != nil {
+		return d, errors.Wrap(err, "获取能力设置失败")
+	}
+	code := resp.Response().StatusCode
+	if code != http.StatusOK {
+		return d, errors.New(fmt.Sprintf("获取用户能力设置请求错误 %d %s ", code, resp.String()))
+	}
+	err = resp.ToJSON(&d)
+	if err != nil {
+		return d, errors.Wrap(err, "解析用户能力设置出错")
+	}
+	return d, nil
 
 }
 
@@ -192,7 +216,7 @@ func (c *Sso) GetUploadKey() (UploadKeyResp, error) {
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		return d, errors.New(fmt.Sprintf("获取上传凭据请求出错 %d %sign", code, resp.String()))
+		return d, errors.New(fmt.Sprintf("获取上传凭据请求出错 %d %s", code, resp.String()))
 	}
 	err = resp.ToJSON(&d)
 	if err != nil {
@@ -217,7 +241,7 @@ func (c *Sso) PreOrderIdGetSuccessList(preOrderId string, page, pageSize uint64)
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("获取成交列表请求出错 %d %sign", code, resp.String()))
+		return nil, errors.New(fmt.Sprintf("获取成交列表请求出错 %d %s", code, resp.String()))
 	}
 	err = resp.ToJSON(&r)
 	if err != nil {
@@ -241,7 +265,7 @@ func (c *Sso) OrderIdGetInfo(orderId string) (GetOrderInfoResp, error) {
 	}
 	code := resp.Response().StatusCode
 	if code != http.StatusOK {
-		return r, errors.New(fmt.Sprintf("获取成交列表请求出错 %d %sign", code, resp.String()))
+		return r, errors.New(fmt.Sprintf("获取成交列表请求出错 %d %s", code, resp.String()))
 	}
 	err = resp.ToJSON(&r)
 	if err != nil {

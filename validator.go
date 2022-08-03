@@ -90,6 +90,16 @@ type PowerChangeReq struct {
 	Reason string `json:"reason" form:"reason"` // 理由
 }
 
+type PowerSettingReq struct {
+	UidGetUserReq
+	Eng string `json:"eng" form:"eng"`
+}
+
+type PowerSettingResp struct {
+	UpdateAt string `json:"update_at"`
+	Data     string `json:"data"`
+}
+
 // UploadKeyResp 上传key请求resp
 type UploadKeyResp struct {
 	SecretID     string

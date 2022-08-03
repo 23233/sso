@@ -167,7 +167,22 @@ func TestChangeUserPower(t *testing.T) {
 	}
 	println(success)
 }
+func TestUidGetUserPowerSetting(t *testing.T) {
+	s, err := getSdk()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	uid := "3ITM5gDN3MDMzA"
+	eng := "test_power"
+	resp, err := s.UidGetUserPowerSetting(uid, eng)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(resp.UpdateAt)
+	t.Log(resp.Data)
 
+}
 func TestAll(t *testing.T) {
 	t.Run("获取用户信息", TestGetUserInfo)
 	t.Run("获取上传key", TestUpload)
@@ -176,4 +191,5 @@ func TestAll(t *testing.T) {
 	t.Run("通过orderId获取成交记录", TestOrderGetInfo)
 	t.Run("图片上传", TestImgUpload)
 	t.Run("变更用户能力", TestChangeUserPower)
+	t.Run("获取用户能力设置", TestUidGetUserPowerSetting)
 }
