@@ -127,3 +127,12 @@ type JsonSchemaReq struct {
 	Data         string   `json:"data" form:"data" comment:"表单数据" validate:"required"`
 	InjectData   string   `json:"inject_data,omitempty" form:"inject_data,omitempty" comment:"注入数据"`
 }
+
+type HitTextResp struct {
+	Success bool   `json:"success"`
+	Msg     string `json:"msg"`
+}
+
+type HitImgResp struct {
+	Success bool `json:"success"`
+}

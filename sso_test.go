@@ -20,8 +20,21 @@ func getSdk() (*Sso, error) {
 		return nil, errors.New("未找到参数")
 	}
 	s := New(publicKey, secretKey)
-	s.SetHost("http://127.0.0.1:7778")
+	//s.SetHost("http://127.0.0.1:7778")
 	return &s, nil
+}
+
+var sdk *Sso
+
+func TestMain(m *testing.M) {
+	s, err := getSdk()
+	if err != nil {
+		println("未找到参数")
+		return
+	}
+	sdk = s
+	code := m.Run()
+	os.Exit(code)
 }
 
 func TestNew(t *testing.T) {
@@ -36,12 +49,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestUpload(t *testing.T) {
-	s, err := getSdk()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	resp, err := s.GetUploadKey()
+
+	resp, err := sdk.GetUploadKey()
 	if err != nil {
 		t.Error(err)
 		return
@@ -50,13 +59,8 @@ func TestUpload(t *testing.T) {
 }
 
 func TestPreOrder(t *testing.T) {
-	s, err := getSdk()
-	if err != nil {
-		t.Error(err)
-		return
-	}
 	// 预下单
-	order, err := s.ProductPreOrder(PreOrder{
+	order, err := sdk.ProductPreOrder(PreOrder{
 		Name:      "测试预下单",
 		Price:     1,
 		Desc:      "描述",
@@ -72,14 +76,9 @@ func TestPreOrder(t *testing.T) {
 	t.Log(order.PreOrderId)
 }
 func TestGetUserInfo(t *testing.T) {
-	s, err := getSdk()
-	if err != nil {
-		t.Error(err)
-		return
-	}
 
 	// 获取用户信息
-	info, err := s.UidGetUserInfo("3ITM5gDN3MDMzA")
+	info, err := sdk.UidGetUserInfo("3ITM5gDN3MDMzA")
 	if err != nil {
 		t.Error(err)
 		return
@@ -89,13 +88,9 @@ func TestGetUserInfo(t *testing.T) {
 }
 
 func TestPreOrderGetSuccessList(t *testing.T) {
-	s, err := getSdk()
-	if err != nil {
-		t.Error(err)
-		return
-	}
+
 	// 预下单
-	order, err := s.ProductPreOrder(PreOrder{
+	order, err := sdk.ProductPreOrder(PreOrder{
 		Name:      "测试预下单",
 		Price:     1,
 		Desc:      "描述",
@@ -108,7 +103,7 @@ func TestPreOrderGetSuccessList(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	l, err := s.PreOrderIdGetSuccessList(order.PreOrderId, 1, 10)
+	l, err := sdk.PreOrderIdGetSuccessList(order.PreOrderId, 1, 10)
 	if err != nil {
 		t.Error(err)
 		return
@@ -116,13 +111,21 @@ func TestPreOrderGetSuccessList(t *testing.T) {
 	println(len(l.Data))
 }
 func TestOrderGetInfo(t *testing.T) {
-	s, err := getSdk()
+	// 预下单
+	order, err := sdk.ProductPreOrder(PreOrder{
+		Name:      "测试预下单",
+		Price:     1,
+		Desc:      "描述",
+		Extra:     "aaaa",
+		Substance: "测试sub",
+		Uid:       "uuuiiiddd",
+		Count:     10,
+	})
 	if err != nil {
 		t.Error(err)
 		return
 	}
-
-	getInfo, err := s.OrderIdGetInfo("4213bcd65bf64312a27191f6ca46bacc")
+	getInfo, err := sdk.OrderIdGetInfo(order.PreOrderId)
 	if err != nil {
 		t.Error(err)
 		return
@@ -131,18 +134,7 @@ func TestOrderGetInfo(t *testing.T) {
 
 }
 func TestImgUpload(t *testing.T) {
-	s, err := getSdk()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	fd, err := os.Open("./t.png")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
-	r, err := s.UploadImage(fd, "t.png", 1920)
+	r, err := sdk.UploadImage("./t.png", 1920)
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -151,38 +143,46 @@ func TestImgUpload(t *testing.T) {
 	println(r.Thumbnail)
 }
 func TestChangeUserPower(t *testing.T) {
-	s, err := getSdk()
-	if err != nil {
-		t.Error(err)
-		return
-	}
 
 	var d PowerChangeReq
 	d.Uid = "test_power"
 	d.Open = true
 	d.Reason = "通过"
-	success, err := s.ChangeUserPower(d)
+	success, err := sdk.ChangeUserPower(d)
 	if err != nil {
 		t.Error(err)
 	}
 	println(success)
 }
 func TestUidGetUserPowerSetting(t *testing.T) {
-	s, err := getSdk()
-	if err != nil {
-		t.Error(err)
-		return
-	}
 	uid := "3ITM5gDN3MDMzA"
 	eng := "test_power"
-	resp, err := s.UidGetUserPowerSetting(uid, eng)
+	resp, err := sdk.UidGetUserPowerSetting(uid, eng)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	t.Log(resp.UpdateAt)
 	t.Log(resp.Data)
-
 }
+
+func TestHitText(t *testing.T) {
+	resp, err := sdk.HitText("赵日天我得乖乖得亲亲蛋")
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("测试结果 %v 文本 %s", resp.Success, resp.Msg)
+	resp, _ = sdk.HitText("淫妹阴毛小穴")
+	t.Logf("测试结果 %v 文本 %s", resp.Success, resp.Msg)
+}
+
+func TestHitImage(t *testing.T) {
+	resp, err := sdk.HitImage("https://cdn.golangdocs.com/wp-content/uploads/2020/09/Download-Files-for-Golang.png")
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("测试结果 %v ", resp.Success)
+}
+
 func TestAll(t *testing.T) {
 	t.Run("获取用户信息", TestGetUserInfo)
 	t.Run("获取上传key", TestUpload)
@@ -192,4 +192,6 @@ func TestAll(t *testing.T) {
 	t.Run("图片上传", TestImgUpload)
 	t.Run("变更用户能力", TestChangeUserPower)
 	t.Run("获取用户能力设置", TestUidGetUserPowerSetting)
+	t.Run("文本内容安全判断", TestHitText)
+	t.Run("图像内容安全判断", TestHitImage)
 }

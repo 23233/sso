@@ -4,11 +4,10 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"github.com/imroc/req"
+	"github.com/imroc/req/v3"
 	"github.com/pkg/errors"
 	"math/rand"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -38,16 +37,19 @@ func (c *Sso) SetHost(host string) {
 }
 
 // 生成基本的public_key url参数
-func (c *Sso) getParam() req.Param {
-	return req.Param{
+func (c *Sso) getParam() map[string]string {
+	return map[string]string{
 		"public_key": c.PublicKey,
 	}
 }
 
 // 生成一个请求req
-func (c *Sso) getReq() *req.Req {
-	r := req.New()
-	r.SetTimeout(10 * time.Second)
+func (c *Sso) getReq() *req.Request {
+	return req.R()
+}
+func (c *Sso) getJsonReq(body interface{}) *req.Request {
+	r := c.getReq()
+	r.SetBodyJsonMarshal(body)
 	return r
 }
 
@@ -104,11 +106,11 @@ func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, i
 		msg = "转账"
 	}
 
-	resp, err := c.getReq().Post(url, c.getParam(), req.BodyJSON(data))
+	resp, err := c.getJsonReq(data).SetQueryParams(c.getParam()).Post(url)
 	if err != nil {
 		return d, errors.Wrap(err, "发起交易出错"), 0
 	}
-	code := resp.Response().StatusCode
+	code := resp.StatusCode
 	if code != http.StatusOK {
 		// 余额不足
 		if code == http.StatusUpgradeRequired {
@@ -116,7 +118,7 @@ func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, i
 		}
 		return d, errors.New(fmt.Sprintf("%s响应错误 %d %s", msg, code, resp.String())), code
 	}
-	err = resp.ToJSON(&d)
+	err = resp.UnmarshalJson(&d)
 	if err != nil {
 		return d, errors.Wrap(err, fmt.Sprintf("%s解析返回信息出错", msg)), code
 	}
@@ -128,15 +130,15 @@ func (c *Sso) ProductPreOrder(data PreOrder) (PreOrderResp, error) {
 	data.GenSign()
 	var d PreOrderResp
 	url := c.UrlGen(c.Prefix, "/pre_order")
-	resp, err := c.getReq().Post(url, req.BodyJSON(data))
+	resp, err := c.getJsonReq(data).Post(url)
 	if err != nil {
 		return d, errors.Wrap(err, "预下单出错")
 	}
-	code := resp.Response().StatusCode
+	code := resp.StatusCode
 	if code != http.StatusOK {
 		return d, errors.New(fmt.Sprintf("预下单相应失败 %d %s", code, resp.String()))
 	}
-	err = resp.ToJSON(&d)
+	err = resp.UnmarshalJson(&d)
 	if err != nil {
 		return d, errors.Wrap(err, "解析预下单返回失败")
 	}
@@ -150,15 +152,15 @@ func (c *Sso) UidGetUserInfo(uid string) (UidGetUserResp, error) {
 	var p UidGetUserReq
 	p.Uid = uid
 	p.GenSign()
-	resp, err := c.getReq().Post(url, req.BodyJSON(p))
+	resp, err := c.getJsonReq(p).Post(url)
 	if err != nil {
 		return d, errors.Wrap(err, "获取用户信息请求出错")
 	}
-	code := resp.Response().StatusCode
+	code := resp.StatusCode
 	if code != http.StatusOK {
 		return d, errors.New(fmt.Sprintf("获取用户信息请求错误 %d %s", code, resp.String()))
 	}
-	err = resp.ToJSON(&d)
+	err = resp.UnmarshalJson(&d)
 	if err != nil {
 		return d, errors.Wrap(err, "解析用户信息出错")
 	}
@@ -169,11 +171,11 @@ func (c *Sso) UidGetUserInfo(uid string) (UidGetUserResp, error) {
 func (c *Sso) ChangeUserPower(data PowerChangeReq) (bool, error) {
 	data.GenSign()
 	url := c.UrlGen(c.Prefix, "/power_change")
-	resp, err := c.getReq().Post(url, req.BodyJSON(data))
+	resp, err := c.getJsonReq(data).Post(url)
 	if err != nil {
 		return false, errors.Wrap(err, "变更用户能力出错")
 	}
-	code := resp.Response().StatusCode
+	code := resp.StatusCode
 	if code != http.StatusOK {
 		return false, errors.New(fmt.Sprintf("变更用户能力失败 %d %s", code, resp.String()))
 	}
@@ -190,15 +192,15 @@ func (c *Sso) UidGetUserPowerSetting(uid string, eng string) (PowerSettingResp, 
 	p.GenSign()
 	url := c.UrlGen(c.Prefix, "/power_setting_new")
 	var d PowerSettingResp
-	resp, err := c.getReq().Post(url, req.BodyJSON(p))
+	resp, err := c.getJsonReq(p).Post(url)
 	if err != nil {
 		return d, errors.Wrap(err, "获取能力设置失败")
 	}
-	code := resp.Response().StatusCode
+	code := resp.StatusCode
 	if code != http.StatusOK {
 		return d, errors.New(fmt.Sprintf("获取用户能力设置请求错误 %d %s ", code, resp.String()))
 	}
-	err = resp.ToJSON(&d)
+	err = resp.UnmarshalJson(&d)
 	if err != nil {
 		return d, errors.Wrap(err, "解析用户能力设置出错")
 	}
@@ -214,11 +216,11 @@ func (c *Sso) GetUploadKey() (UploadKeyResp, error) {
 	if err != nil {
 		return d, errors.Wrap(err, "获取上传凭据请求出错")
 	}
-	code := resp.Response().StatusCode
+	code := resp.StatusCode
 	if code != http.StatusOK {
 		return d, errors.New(fmt.Sprintf("获取上传凭据请求出错 %d %s", code, resp.String()))
 	}
-	err = resp.ToJSON(&d)
+	err = resp.UnmarshalJson(&d)
 	if err != nil {
 		return d, errors.Wrap(err, "解析上传凭据请求出错")
 	}
@@ -229,21 +231,21 @@ func (c *Sso) GetUploadKey() (UploadKeyResp, error) {
 func (c *Sso) PreOrderIdGetSuccessList(preOrderId string, page, pageSize uint64) (*BalanceChangeHistoryResp, error) {
 	var r = new(BalanceChangeHistoryResp)
 	url := c.UrlGen(c.Prefix, "/pre_order_id")
-	params := req.Param{"pre_order_id": preOrderId, "page": page, "page_size": pageSize}
+	params := map[string]interface{}{"pre_order_id": preOrderId, "page": page, "page_size": pageSize}
 	sign, st, t := Sdk.Sign()
 	params["sign"] = sign
 	params["random_str"] = st
 	params["t"] = t
 
-	resp, err := c.getReq().Get(url, params)
+	resp, err := c.getReq().SetQueryParamsAnyType(params).Get(url)
 	if err != nil {
 		return nil, errors.Wrap(err, "获取成交列表失败")
 	}
-	code := resp.Response().StatusCode
+	code := resp.StatusCode
 	if code != http.StatusOK {
 		return nil, errors.New(fmt.Sprintf("获取成交列表请求出错 %d %s", code, resp.String()))
 	}
-	err = resp.ToJSON(&r)
+	err = resp.UnmarshalJson(&r)
 	if err != nil {
 		return nil, errors.Wrap(err, "解析成交记录失败")
 	}
@@ -254,20 +256,20 @@ func (c *Sso) PreOrderIdGetSuccessList(preOrderId string, page, pageSize uint64)
 func (c *Sso) OrderIdGetInfo(orderId string) (GetOrderInfoResp, error) {
 	var r GetOrderInfoResp
 	url := c.UrlGen(c.Prefix, "/order_id")
-	params := req.Param{"order_id": orderId}
+	params := map[string]string{"order_id": orderId}
 	sign, st, t := Sdk.Sign()
 	params["sign"] = sign
 	params["random_str"] = st
 	params["t"] = t
-	resp, err := c.getReq().Get(url, params)
+	resp, err := c.getReq().SetQueryParams(params).Get(url)
 	if err != nil {
 		return r, errors.Wrap(err, "获取成交列表失败")
 	}
-	code := resp.Response().StatusCode
+	code := resp.StatusCode
 	if code != http.StatusOK {
 		return r, errors.New(fmt.Sprintf("获取成交列表请求出错 %d %s", code, resp.String()))
 	}
-	err = resp.ToJSON(&r)
+	err = resp.UnmarshalJson(&r)
 	if err != nil {
 		return r, errors.Wrap(err, "解析成交记录失败")
 	}
@@ -275,32 +277,55 @@ func (c *Sso) OrderIdGetInfo(orderId string) (GetOrderInfoResp, error) {
 }
 
 // UploadImage 上传图片
-func (c *Sso) UploadImage(file *os.File, fileName string, maxWidth int) (UploadImageResp, error) {
+func (c *Sso) UploadImage(imgPath string, maxWidth int) (UploadImageResp, error) {
 	var r UploadImageResp
 	url := c.UrlGen(c.Prefix, "/img_upload")
-	params := req.Param{}
+	params := make(map[string]interface{})
 	sign, st, t := Sdk.Sign()
 	params["sign"] = sign
 	params["random_str"] = st
 	params["t"] = t
 	params["max_width"] = maxWidth
-	fileForm := req.FileUpload{
-		File:      file,
-		FieldName: "file",   // FieldName 是表单字段名
-		FileName:  fileName, // Filename 是要上传的文件的名称，我们使用它来猜测mimetype，并将其上传到服务器上
-	}
-
-	resp, err := c.getReq().Post(url, params, fileForm)
+	resp, err := c.getReq().SetQueryParamsAnyType(params).SetFile("file", imgPath).SetResult(&r).Post(url)
 	if err != nil {
 		return r, errors.Wrap(err, "发起图像上传失败")
 	}
-	code := resp.Response().StatusCode
+
+	code := resp.StatusCode
 	if code != http.StatusOK {
 		return r, errors.New(fmt.Sprintf("上传图像失败 %d %s", code, resp.String()))
 	}
-	err = resp.ToJSON(&r)
+	err = resp.UnmarshalJson(&r)
 	if err != nil {
 		return r, errors.Wrap(err, "解析上传图像结果失败")
 	}
 	return r, nil
+}
+
+// HitText 检测文字是否违规
+func (c *Sso) HitText(content string) (*HitTextResp, error) {
+	url := c.UrlGen("", "/hit_text")
+	body := map[string]string{
+		"content": content,
+	}
+	var r = new(HitTextResp)
+	resp, err := c.getReq().SetBodyJsonMarshal(body).SetResult(r).Post(url)
+	if err != nil && !resp.IsSuccess() {
+		return r, errors.Wrap(err, "校验文本失败")
+	}
+	return r, err
+}
+
+// HitImage 检测图像是否违规
+func (c *Sso) HitImage(imageUrl string) (*HitImgResp, error) {
+	url := c.UrlGen("", "/hit_image")
+	body := map[string]string{
+		"uri": imageUrl,
+	}
+	var r = new(HitImgResp)
+	resp, err := c.getReq().SetBodyJsonMarshal(body).SetResult(r).Post(url)
+	if err != nil && !resp.IsSuccess() {
+		return r, errors.Wrap(err, "校验图片合规失败")
+	}
+	return r, err
 }
