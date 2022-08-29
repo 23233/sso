@@ -1,4 +1,4 @@
-package sso_sdk
+package sso
 
 // 各类事件回调传入的参数
 

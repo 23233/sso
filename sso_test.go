@@ -1,4 +1,4 @@
-package sso_sdk
+package sso
 
 import (
 	"github.com/pkg/errors"
@@ -13,7 +13,7 @@ func GetEnv(key, fallback string) string {
 	return fallback
 }
 
-func getSdk() (*Sso, error) {
+func getSdk() (*Instance, error) {
 	publicKey := GetEnv("public_key", "")
 	secretKey := GetEnv("secret_key", "")
 	if len(publicKey) < 1 || len(secretKey) < 1 {
@@ -24,7 +24,7 @@ func getSdk() (*Sso, error) {
 	return &s, nil
 }
 
-var sdk *Sso
+var sdk *Instance
 
 func TestMain(m *testing.M) {
 	s, err := getSdk()

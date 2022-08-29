@@ -1,4 +1,4 @@
-package sso_sdk
+package sso
 
 import "time"
 

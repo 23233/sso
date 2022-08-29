@@ -1,4 +1,4 @@
-package sso_sdk
+package sso
 
 import (
 	"crypto/md5"
@@ -12,18 +12,18 @@ import (
 )
 
 var (
-	Sdk Sso
+	Sdk Instance
 )
 
-type Sso struct {
+type Instance struct {
 	Host      string
 	PublicKey string
 	SecretKey string
 	Prefix    string
 }
 
-func New(publicKey, secretKey string) Sso {
-	Sdk = Sso{
+func New(publicKey, secretKey string) Instance {
+	Sdk = Instance{
 		Host:      "https://www.resok.cn",
 		PublicKey: publicKey,
 		SecretKey: secretKey,
@@ -32,48 +32,48 @@ func New(publicKey, secretKey string) Sso {
 	return Sdk
 }
 
-func (c *Sso) SetHost(host string) {
+func (c *Instance) SetHost(host string) {
 	c.Host = host
 }
 
 // 生成基本的public_key url参数
-func (c *Sso) getParam() map[string]string {
+func (c *Instance) getParam() map[string]string {
 	return map[string]string{
 		"public_key": c.PublicKey,
 	}
 }
 
 // 生成一个请求req
-func (c *Sso) getReq() *req.Request {
+func (c *Instance) getReq() *req.Request {
 	return req.R()
 }
-func (c *Sso) getJsonReq(body interface{}) *req.Request {
+func (c *Instance) getJsonReq(body interface{}) *req.Request {
 	r := c.getReq()
 	r.SetBodyJsonMarshal(body)
 	return r
 }
 
 // 生成随机字符串
-func (c *Sso) randomStr(n int) string {
+func (c *Instance) randomStr(n int) string {
 	randBytes := make([]byte, n/2)
 	rand.Read(randBytes)
 	return fmt.Sprintf("%x", randBytes)
 }
 
 // 获取当前时间戳文本
-func (c *Sso) getTimeUnixStr() string {
+func (c *Instance) getTimeUnixStr() string {
 	return fmt.Sprintf("%d", time.Now().Unix())
 }
 
 // Sign 生成一次加密
-func (c *Sso) Sign() (string, string, string) {
+func (c *Instance) Sign() (string, string, string) {
 	rs := c.randomStr(16)
 	us := c.getTimeUnixStr()
 	return c.sign(rs, us), rs, us
 }
 
 // 加密方法
-func (c *Sso) sign(randomStr, timeUnix string) string {
+func (c *Instance) sign(randomStr, timeUnix string) string {
 	h := md5.New()
 	h.Write([]byte(randomStr))
 	h.Write([]byte(c.SecretKey))
@@ -82,18 +82,18 @@ func (c *Sso) sign(randomStr, timeUnix string) string {
 }
 
 // CheckSign 验证加密
-func (c *Sso) CheckSign(sign, randomStr, timeUnix string) bool {
+func (c *Instance) CheckSign(sign, randomStr, timeUnix string) bool {
 	nowSign := c.sign(randomStr, timeUnix)
 	return sign == nowSign
 }
 
 // UrlGen 请求url路径生成
-func (c *Sso) UrlGen(prefix string, p string) string {
+func (c *Instance) UrlGen(prefix string, p string) string {
 	return c.Host + prefix + p + "?public_key=" + c.PublicKey
 }
 
 // RunTr 发起交易 receipt 是否是商品收款
-func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, int) {
+func (c *Instance) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, int) {
 	data.GenSign()
 	var d ProductPayResp
 	var msg string
@@ -126,7 +126,7 @@ func (c *Sso) RunTr(data ProductReceipt, receipt bool) (ProductPayResp, error, i
 }
 
 // ProductPreOrder 预下单
-func (c *Sso) ProductPreOrder(data PreOrder) (PreOrderResp, error) {
+func (c *Instance) ProductPreOrder(data PreOrder) (PreOrderResp, error) {
 	data.GenSign()
 	var d PreOrderResp
 	url := c.UrlGen(c.Prefix, "/pre_order")
@@ -146,7 +146,7 @@ func (c *Sso) ProductPreOrder(data PreOrder) (PreOrderResp, error) {
 }
 
 // UidGetUserInfo 通过uid获取用户信息
-func (c *Sso) UidGetUserInfo(uid string) (UidGetUserResp, error) {
+func (c *Instance) UidGetUserInfo(uid string) (UidGetUserResp, error) {
 	var d UidGetUserResp
 	url := c.UrlGen(c.Prefix, "/get_user")
 	var p UidGetUserReq
@@ -168,7 +168,7 @@ func (c *Sso) UidGetUserInfo(uid string) (UidGetUserResp, error) {
 }
 
 // ChangeUserPower 主动变更用户能力
-func (c *Sso) ChangeUserPower(data PowerChangeReq) (bool, error) {
+func (c *Instance) ChangeUserPower(data PowerChangeReq) (bool, error) {
 	data.GenSign()
 	url := c.UrlGen(c.Prefix, "/power_change")
 	resp, err := c.getJsonReq(data).Post(url)
@@ -185,7 +185,7 @@ func (c *Sso) ChangeUserPower(data PowerChangeReq) (bool, error) {
 }
 
 // UidGetUserPowerSetting 获取用户能力设置
-func (c *Sso) UidGetUserPowerSetting(uid string, eng string) (PowerSettingResp, error) {
+func (c *Instance) UidGetUserPowerSetting(uid string, eng string) (PowerSettingResp, error) {
 	var p PowerSettingReq
 	p.Uid = uid
 	p.Eng = eng
@@ -209,7 +209,7 @@ func (c *Sso) UidGetUserPowerSetting(uid string, eng string) (PowerSettingResp, 
 }
 
 // GetUploadKey 获取上传凭据
-func (c *Sso) GetUploadKey() (UploadKeyResp, error) {
+func (c *Instance) GetUploadKey() (UploadKeyResp, error) {
 	var d UploadKeyResp
 	url := c.UrlGen(c.Prefix, "/upload_key")
 	resp, err := c.getReq().Get(url)
@@ -228,7 +228,7 @@ func (c *Sso) GetUploadKey() (UploadKeyResp, error) {
 }
 
 // PreOrderIdGetSuccessList 通过预下单ID获取成交列表
-func (c *Sso) PreOrderIdGetSuccessList(preOrderId string, page, pageSize uint64) (*BalanceChangeHistoryResp, error) {
+func (c *Instance) PreOrderIdGetSuccessList(preOrderId string, page, pageSize uint64) (*BalanceChangeHistoryResp, error) {
 	var r = new(BalanceChangeHistoryResp)
 	url := c.UrlGen(c.Prefix, "/pre_order_id")
 	params := map[string]interface{}{"pre_order_id": preOrderId, "page": page, "page_size": pageSize}
@@ -253,7 +253,7 @@ func (c *Sso) PreOrderIdGetSuccessList(preOrderId string, page, pageSize uint64)
 }
 
 // OrderIdGetInfo 通过orderId获取成交记录
-func (c *Sso) OrderIdGetInfo(orderId string) (GetOrderInfoResp, error) {
+func (c *Instance) OrderIdGetInfo(orderId string) (GetOrderInfoResp, error) {
 	var r GetOrderInfoResp
 	url := c.UrlGen(c.Prefix, "/order_id")
 	params := map[string]string{"order_id": orderId}
@@ -277,7 +277,7 @@ func (c *Sso) OrderIdGetInfo(orderId string) (GetOrderInfoResp, error) {
 }
 
 // UploadImage 上传图片
-func (c *Sso) UploadImage(imgPath string, maxWidth int) (UploadImageResp, error) {
+func (c *Instance) UploadImage(imgPath string, maxWidth int) (UploadImageResp, error) {
 	var r UploadImageResp
 	url := c.UrlGen(c.Prefix, "/img_upload")
 	params := make(map[string]interface{})
@@ -303,7 +303,7 @@ func (c *Sso) UploadImage(imgPath string, maxWidth int) (UploadImageResp, error)
 }
 
 // HitText 检测文字是否违规
-func (c *Sso) HitText(content string) (*HitTextResp, error) {
+func (c *Instance) HitText(content string) (*HitTextResp, error) {
 	url := c.UrlGen("", "/hit_text")
 	body := map[string]string{
 		"content": content,
@@ -317,7 +317,7 @@ func (c *Sso) HitText(content string) (*HitTextResp, error) {
 }
 
 // HitImage 检测图像是否违规
-func (c *Sso) HitImage(imageUrl string) (*HitImgResp, error) {
+func (c *Instance) HitImage(imageUrl string) (*HitImgResp, error) {
 	url := c.UrlGen("", "/hit_image")
 	body := map[string]string{
 		"uri": imageUrl,
